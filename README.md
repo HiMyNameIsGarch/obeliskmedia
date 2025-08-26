@@ -7,9 +7,10 @@ hosted server.
 - [Before installation requirements](#before-installation-requirements)
 - [Installation process](#installation-process)
 - [Post installation requirements](#post-installation-requirements)
+- [CasaOS](#casaos)
+- [Server automation](#server-automation)
 - [Security considerations](#security-considerations)
 - [Troubleshooting](#troubleshooting)
-- [Automated installation](#automated-installation)
 
 # Before installation requirements
 - To make this work you will need at least 4GB of RAM and a 64-bit CPU ( at
@@ -29,33 +30,49 @@ necessary packages. I choose Ubuntu Server LTS for this project. As my setup is 
     - Storage: 300GB HDD ( may upgrade in the future )
 
 # Post installation requirements
-- Install the latest updates for your operating system. Then you will observe
-that jellyfin is not in the repositories. You will need to add it in the following way:
+Install the latest updates for your operating system. Let's configure the
+ssh once in for all. Firstly run `sudo apt install openssh-server`. It should be
+up and running. Then go into some machine, generate a new ssh key and copy it with
+`ssh-copy-id` onto the remote host( aka the server ). Don't close the session, because
+we are going to apply some changes to it:
 
-Start installing the neccesary packages:
+The following changes are kinda mandatory for a "so to speak" home made server,
+the changes are made in `/etc/ssh/sshd_config`, use you favourite editor (vi):
+
+- `Port 6234`
+Here choose a random port
+- `MaxAuthTries 2`
+- `PermitRootLogin no`
+- `PasswordAuthentication no`
+- `PermitEmptyPasswords no`
+Perfection, give a `sudo systemctl restart ssh` and we are good to go.
+
+# CasaOS
+For this setup I will use CasaOS with Docker. By default I don't think it will
+be installed out of the box via Ubuntu installation wizard. My advice is to
+follow their [official guide](https://docs.docker.com/engine/install/ubuntu/).
+Don't use `ufw` use directly `iptables` as docker does not like for some reason
+`ufw`.
+
+Perfection. Now it's time to shine.
+
+Grab a coffee or a cup of tea and run the following command (it's from their
+official website btw):
 ```
-sudo apt install apt-transport-https ca-certificates gnupg2 software-properties-common
+curl -fsSL https://get.casaos.io | sudo bash
 ```
-Then import the Jellyfin GPG key:
-```
-curl -fsSL https://repo.jellyfin.org/jellyfin_team.gpg.key | sudo gpg --dearmor -o /usr/share/keyrings/jellyfin-archive-keyring.gpg
-```
-Now add the repository:
-```
-echo "deb [signed-by=/usr/share/keyrings/jellyfin-archive-keyring.gpg] https://repo.jellyfin.org/ubuntu $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/jellyfin.list
-```
-Finally, update the package list and install Jellyfin:
-```
-sudo apt update && sudo apt install jellyfin -y && sudo systemctl enable jellyfin
-```
-And voilà, you have installed Jellyfin on your server. You can now access it via
-your web browser at `http://<your-server-ip>:8096`.
+Now from their UI, you can install Jellyfin, Sonarr, Radarr, Jellyseer and many
+more. By default CasaOS does not offer that much when it comes to statistics
+about the operating system. Ok, I get the RAM and CPU usage on each container
+individually. On this hand is perfect, as I am a bit picky, I would want more
+information about the temperature of the CPU, more about the GPU etc. I think
+this will be a nice project for future me.
+
+# Server Automation
+When we talk about automation in servers, there is a plethora of options for
+everyone's personal needs. Once you link a mail server, you just got yourself
+a new toy to play.
 
 # Security considerations
 
 # Troubleshooting
-
-# Automated installation
-
-
-
