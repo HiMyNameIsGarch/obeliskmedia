@@ -8,6 +8,7 @@ hosted server.
 - [Installation process](#installation-process)
 - [Post installation requirements](#post-installation-requirements)
 - [CasaOS](#casaos)
+- [Prometheus and Grafana](#prometheus-and-grafana)
 - [Server automation](#server-automation)
 - [Security considerations](#security-considerations)
 - [Troubleshooting](#troubleshooting)
@@ -67,6 +68,97 @@ about the operating system. Ok, I get the RAM and CPU usage on each container
 individually. On this hand is perfect, as I am a bit picky, I would want more
 information about the temperature of the CPU, more about the GPU etc. I think
 this will be a nice project for future me.
+
+# Prometheus and Grafana
+If you read above about my problems when it comes to statistics, you can already
+tell that I like fancy graphs. Here comes Prometheus and Grafana in hand. Prometheus
+is one of many sources for Grafana and Prometheus cannot work without some data
+sources, or exporters more explicitly. The first and basic exporter is `node_exporter`.
+
+As in CasaOS you cannot "install" Node_exporter and Prometheus, you need to create
+them manually. So I choose the following structure of containers via docker-compose.yml.
+
+- exporters
+    - node_exporter
+    - qbittorrent_exporter
+    - jellyfin_exporter
+    - etc
+- prometheus
+- grafana ( which will be installed via CasaOS )
+
+The containers are placed in `/var/lib/casaos/apps/`, run the following:
+```
+cd /var/lib/casaos/apps/
+
+mkdir exporters promethus
+
+# this creates the docker-compose files in both directories
+touch {exporters,prometheus}/docker-compose.yml
+
+# also create a scrape config for prometheus like:
+touch prometheus/prometheus.yml
+```
+
+Now create the `node_exporter` container like so:
+```
+name: exporters
+services:
+    node-exporter:
+        cpu_shares: 90
+        command: []
+        container_name: node_exporters
+        deploy:
+            resources:
+                limits:
+                    memory: "3767533568"
+        hostname: node_exporters
+        image: prom/node-exporter:latest
+        network_mode: host
+        restart: always
+```
+
+Then create the Prometheus container:
+```
+name: prometheus
+services:
+    prometheus:
+        cpu_shares: 90
+        command: []
+        container_name: prometheus
+        deploy:
+            resources:
+                limits:
+                    memory: "3767533568"
+        hostname: prometheus
+        image: prom/prometheus:latest
+        labels:
+            icon: https://github.com/prometheus/docs/raw/ca2961b495c3e2a1e4586899c26de692fa5a28e7/static/prometheus_logo_orange_circle.svg
+        network_mode: bridge
+        ports:
+            - mode: ingress
+              target: 9090
+              published: "9090"
+              protocol: tcp
+        restart: always - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+```
+
+Now we need the scrape config like so:
+```
+global:
+  scrape_interval: 10s
+
+scrape_configs:
+  - job_name: "node_exporter"
+    static_configs:
+      - targets: ["<your-local-ip>:9100"]
+
+  - job_name: "<another-exporter"
+    static_configs:
+      - targets: ["<your-local-ip>:<your_port>"]
+```
+You can change the scrape time from 10 seconds to whatever you want and here
+you will place all the scrapers.
+
 
 # Server Automation
 When we talk about automation in servers, there is a plethora of options for
