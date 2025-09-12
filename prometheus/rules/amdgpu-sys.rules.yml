@@ -1,0 +1,29 @@
+groups:
+- name: gpu-system
+  rules:
+  - alert: GPUExporterDown
+    expr: up{job="amdgpu_exporter"} == 0
+    for: 1m
+    labels:
+      severity: critical
+    annotations:
+      summary: "GPU exporter down (instance {{ $labels.server }})"
+      description: "AMD GPU exporter is not responding"
+
+  # for future
+  # - alert: GPUExporterScrapeFail
+  #   expr: increase(amd_gpu_scrape_errors_total[5m]) > 0
+  #   labels:
+  #     severity: warning
+  #   annotations:
+  #     summary: "GPU scrape errors (instance {{ $labels.instance }})"
+  #     description: "GPU metrics scraping is failing: {{ $value }} errors in 5m"
+
+  # for future
+  # - alert: GPUMetricsStale
+  #   expr: time() - amd_gpu_scrape_timestamp_seconds > 300
+  #   labels:
+  #     severity: warning
+  #   annotations:
+  #     summary: "GPU metrics stale (instance {{ $labels.instance }})"
+  #     description: "GPU metrics haven't been updated for 5 minutes"

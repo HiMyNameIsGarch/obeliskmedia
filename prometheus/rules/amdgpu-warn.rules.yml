@@ -1,0 +1,47 @@
+groups:
+- name: gpu-warning
+  rules:
+  - alert: GPUHighTemperature
+    expr: amd_gpu_temperature_celsius > 80
+    for: 10m
+    labels:
+      severity: warning
+    annotations:
+      summary: "GPU temperature high (instance {{ $labels.server }})"
+      description: "GPU temperature is elevated at {{ $value }}°C"
+
+  - alert: GPUHighMemoryUsage
+    expr: amd_gpu_memory_usage_percent > 90
+    for: 15m
+    labels:
+      severity: warning
+    annotations:
+      summary: "GPU memory usage high (instance {{ $labels.server }})"
+      description: "GPU memory usage is at {{ $value }}%"
+
+  - alert: GPUHighUtilization
+    expr: amd_gpu_usage_percent > 95
+    for: 30m
+    labels:
+      severity: warning
+    annotations:
+      summary: "GPU utilization high (instance {{ $labels.server }})"
+      description: "GPU utilization is consistently high(30m) at {{ $value }}%"
+
+  - alert: GPUFanFailure
+    expr: amd_gpu_fan_rpm == 0
+    for: 2m
+    labels:
+      severity: warning
+    annotations:
+      summary: "GPU fan not spinning (instance {{ $labels.server }})"
+      description: "GPU fan appears to be stopped (0 RPM)"
+
+  - alert: GPUFanAbuse
+    expr: amd_gpu_fan_rpm > 2500
+    for: 2m
+    labels:
+      severity: warning
+    annotations:
+      summary: "GPU fan is being abused (instance {{ $labels.server }})"
+      description: "GPU fan appears to be speeding at ({{ $value }} RPM)"

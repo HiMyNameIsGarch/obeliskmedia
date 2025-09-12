@@ -1,0 +1,29 @@
+groups:
+- name: gpu-info
+  rules:
+  # for future
+  # - alert: GPUThrottling
+  #   expr: amd_gpu_throttling_status > 0
+  #   labels:
+  #     severity: info
+  #   annotations:
+  #     summary: "GPU is throttling (instance {{ $labels.server }})"
+  #     description: "GPU is currently throttling due to temperature or power limits"
+
+  - alert: GPUClockAnomaly
+    expr: abs(amd_gpu_sclk_clock - avg(amd_gpu_sclk_clock) by (gpu)) > avg(amd_gpu_sclk_clock) by (gpu) * 0.3
+    for: 5m
+    labels:
+      severity: info
+    annotations:
+      summary: "GPU clock anomaly (instance {{ $labels.server }})"
+      description: "GPU clock speed is abnormal: {{ $value }}MHz"
+
+  - alert: GPUVoltageAnomaly
+    expr: amd_gpu_voltage_volts < 0.8 or amd_gpu_voltage_volts > 1.2
+    for: 2m
+    labels:
+      severity: info
+    annotations:
+      summary: "GPU voltage anomaly (instance {{ $labels.server }})"
+      description: "GPU voltage is outside expected range: {{ $value }}V"

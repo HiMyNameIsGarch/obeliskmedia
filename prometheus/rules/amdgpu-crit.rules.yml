@@ -1,0 +1,29 @@
+groups:
+- name: gpu-critical
+  rules:
+  - alert: GPUOverheating
+    expr: amd_gpu_temperature_celsius > 90
+    for: 5m
+    labels:
+      severity: critical
+    annotations:
+      summary: "GPU overheating (instance {{ $labels.server }})"
+      description: "GPU temperature is critically high at {{ $value }}C"
+
+  - alert: GPUPowerAnomaly
+    expr: amd_gpu_power_watts > 120 or amd_gpu_power_watts < 30
+    for: 2m
+    labels:
+      severity: critical
+    annotations:
+      summary: "GPU power anomaly (instance {{ $labels.server }})"
+      description: "GPU power consumption is abnormal: {{ $value }}W"
+
+  # for future
+  # - alert: GPUHardwareError
+  #   expr: increase(amd_gpu_hw_errors_total[5m]) > 0
+  #   labels:
+  #     severity: critical
+  #   annotations:
+  #     summary: "GPU hardware errors detected (instance {{ $labels.server }})"
+  #     description: "GPU is reporting hardware errors: {{ $value }} errors in 5m"

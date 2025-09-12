@@ -1,0 +1,72 @@
+groups:
+- name: qbit.rules
+  rules:
+  # Space almost gone on your downloads volume (keep from before)
+  - alert: QbitDiskFull
+    expr: (node_filesystem_size_bytes{mountpoint="/DATA",fstype!~"tmpfs|overlay"} - node_filesystem_free_bytes{mountpoint="/DATA",fstype!~"tmpfs|overlay"}) / node_filesystem_size_bytes{mountpoint="/DATA",fstype!~"tmpfs|overlay"} > 0.95
+    for: 5m
+    labels:
+      severity: critical
+    annotations:
+      summary: "qBittorrent disk nearly full on {{ $labels.server }} ({{ $labels.mountpoint }})"
+      description: "More than 95% used on /DATA. Consider freeing space or expanding the volume."
+
+  # 🚨 Exporter down (qbit-exporter itself unreachable)
+  - alert: QbitExporterDown
+    expr: up{job="qbit"} == 0
+    for: 2m
+    labels:
+      severity: critical
+    annotations:
+      summary: "qBittorrent exporter down on {{ $labels.server }}"
+      description: "Prometheus cannot scrape qbit-exporter for 2 minutes."
+
+  # 🌐 DHT connectivity looks bad (often points to WAN/NAT issues)
+  - alert: QbitLowDHTNodes
+    expr: qbittorrent_dht_nodes < 20
+    for: 10m
+    labels:
+      severity: warning
+    annotations:
+      summary: "Low DHT node count on {{ $labels.server }}"
+      description: "DHT nodes < 20 for 10m — possible connectivity or ISP filtering issue."
+
+  # 🧭 Speed limit accidentally left on
+  - alert: QbitSpeedLimitEnabled
+    expr: (qbittorrent_dl_limited == 1) or (qbittorrent_up_limited == 1)
+    for: 10m
+    labels:
+      severity: info
+    annotations:
+      summary: "qBittorrent speed limit enabled on {{ $labels.server }}"
+      description: "Download or upload limit has been active for 10m. Verify schedule or manual setting."
+
+  # 🧩 Too many torrents in error state
+  - alert: QbitTooManyErroredTorrents
+    expr: qbittorrent_torrents_error_total > 3
+    for: 10m
+    labels:
+      severity: warning
+    annotations:
+      summary: "Torrents in error on {{ $labels.server }}"
+      description: "More than 3 torrents are in an error state for 10m. Check trackers/storage."
+
+  # 📡 Widespread tracker errors/warnings
+  - alert: QbitTrackerIssues
+    expr: (qbittorrent_trackers_error_total + qbittorrent_trackers_warning_total) > 10
+    for: 15m
+    labels:
+      severity: warning
+    annotations:
+      summary: "Tracker errors/warnings on {{ $labels.server }}"
+      description: "High number of tracker errors or warnings — check network, VPN, or tracker status."
+
+  # 👥 Connection count unusually high (may hit OS limits)
+  - alert: QbitTooManyPeers
+    expr: qbittorrent_peers_connected > 2000
+    for: 10m
+    labels:
+      severity: warning
+    annotations:
+      summary: "High peer connections on {{ $labels.server }}"
+      description: "Peers > 2000 for 10m — consider per-torrent/ global connection caps."

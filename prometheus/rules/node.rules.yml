@@ -1,0 +1,53 @@
+groups:
+- name: node_exporter.rules
+  rules:
+  # CPU Usage
+  - alert: HighCPUUsage
+    expr: 100 - (avg by (instance) (irate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 90
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      summary: "High CPU usage on {{ $labels.server }}"
+      description: "CPU usage > 90% for 5m"
+
+  # Memory Usage
+  - alert: HighMemoryUsage
+    expr: (node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes) / node_memory_MemTotal_bytes > 0.9
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      summary: "High memory usage on {{ $labels.server }}"
+      description: "Memory usage > 90% for 5m"
+
+  # Disk Usage
+  - alert: HighDiskUsage
+    expr: (node_filesystem_size_bytes{fstype!~"tmpfs|overlay"} - node_filesystem_free_bytes{fstype!~"tmpfs|overlay"}) / node_filesystem_size_bytes{fstype!~"tmpfs|overlay"} > 0.9
+    for: 10m
+    labels:
+      severity: warning
+    annotations:
+      summary: "High disk usage on {{ $labels.server }} {{ $labels.mountpoint }}"
+      description: "Disk usage > 90% for 10m"
+
+  # Disk I/O Saturation
+  - alert: DiskIOLoad
+    expr: rate(node_disk_io_time_seconds_total[5m]) > 0.8
+    for: 10m
+    labels:
+      severity: warning
+    annotations:
+      summary: "High Disk I/O on {{ $labels.device }}"
+      description: "Disk busy > 80% for 10m"
+
+  # Node Down
+  - alert: NodeDown
+    expr: up{job="node_exporter"} == 0
+    for: 1m
+    labels:
+      severity: critical
+    annotations:
+      summary: "Node {{ $labels.server }} down"
+      description: "Exporter is not reachable for 1m"
+
